@@ -1,6 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main (main) where
 
-import Lib
+import Web.Scotty (get, html, pathParam, scotty)
 
 main :: IO ()
-main = someFunc
+main = scotty 3000 $
+  get "/:word" $ do
+    beam <- pathParam "word"
+    html $ mconcat ["<h1>Scotty, ", beam, " me up!</h1>"]
