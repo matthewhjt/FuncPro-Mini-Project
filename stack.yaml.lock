@@ -11,6 +11,27 @@ packages:
       size: 2138
   original:
     hackage: scotty-0.22@sha256:b3c799b3c4896176342062c1140c290ffb9a8d81e6da2ea3e12f7a83cbda78d4,6013
+- completed:
+    hackage: aeson-2.1.2.1@sha256:aaa8be7ead024f05e9d5b290eb7ee5750deec1137b8f08f7ef039b8cb9036351,6355
+    pantry-tree:
+      sha256: a0d920dfe603c64910911c5ebf22b73f86a61b9e61e9fc629f0f31a8ec0de683
+      size: 82465
+  original:
+    hackage: aeson-2.1.2.1
+- completed:
+    hackage: uuid-1.3.16@sha256:0e314e4f967c4d5ebaa4ec3f9936828e07f9420e4702038441a271ff422279e9,2578
+    pantry-tree:
+      sha256: a103377d94fdd081624e3d5bbe55445e4f1d6a420d9aa0e582e73f6e84dd14d2
+      size: 739
+  original:
+    hackage: uuid-1.3.16@sha256:0e314e4f967c4d5ebaa4ec3f9936828e07f9420e4702038441a271ff422279e9,2578
+- completed:
+    hackage: uuid-types-1.0.6@sha256:595644500d36908be85cd02fb446c411555ecc5c59b7ce33d1205cfc9ceb55a6,2604
+    pantry-tree:
+      sha256: 8ddb70a1c62025f4cb9e5d0b1063631e3b0f709a70b320e7a30696ee4398559c
+      size: 480
+  original:
+    hackage: uuid-types-1.0.6@sha256:595644500d36908be85cd02fb446c411555ecc5c59b7ce33d1205cfc9ceb55a6,2604
 snapshots:
 - completed:
     sha256: 521009bd88879b6993fab5ea5abe1ee2a539dfd8ec2dfc7c57017a8eaee1e78b
