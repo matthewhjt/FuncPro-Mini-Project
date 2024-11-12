@@ -30,8 +30,11 @@ library
       Game.Controller.GameController
       Game.Model.GameModel
       Game.Service.GameService
+      Game.Service.GameValidator
       GameSession.Controller.GameSessionController
       GameSession.Model.GameSessionModel
+      GameSession.Service.GameSessionService
+      GameSession.Service.Generate
       Hardcoded
       Lib
   other-modules:
@@ -48,6 +51,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , postgresql-simple >=0.7
+    , random >=1.2
     , scotty >=0.22
     , uuid >=1.3.16
   default-language: Haskell2010
@@ -69,6 +73,7 @@ executable funpro
     , bytestring
     , funpro
     , postgresql-simple
+    , random
     , scotty
     , uuid >=1.3.16
   default-language: Haskell2010
@@ -91,6 +96,7 @@ test-suite funpro-test
     , bytestring
     , funpro
     , postgresql-simple
+    , random
     , scotty
     , uuid >=1.3.16
   default-language: Haskell2010

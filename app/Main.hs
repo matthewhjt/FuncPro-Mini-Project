@@ -1,10 +1,12 @@
 module Main (main) where
 
-import Game.Controller.GameController (routes)
+import Game.Controller.GameController (gameRoutes)
+import GameSession.Controller.GameSessionController (gameSessionRoutes)
 import DB (getConnection)
 
 main :: IO ()
 main = do
   conn <- getConnection
 
-  routes conn
+  gameRoutes conn
+  -- gameSessionRoutes conn
