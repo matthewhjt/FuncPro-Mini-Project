@@ -15,7 +15,9 @@ data Game = Game
 
 instance ToJSON Game where
     toJSON (Game gameId name gameType) = object
-        [ "gameId" .= show gameId
-        , "name" .= name
-        , "gameType" .= gameType
+        ["game" .= object
+            [ "gameId" .= show gameId
+            , "name" .= name
+            , "gameType" .= gameType
+            ]
         ]

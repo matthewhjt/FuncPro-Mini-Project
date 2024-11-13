@@ -27,9 +27,12 @@ library
   exposed-modules:
       Game.Model.GameModel
       Game.Repository.GameRepository
+      Game.Service.GameGenerator
       Game.Service.GameService
       Game.Service.GameValidator
       GameSession.Model.GameSessionModel
+      GameSession.Repository.GameSessionRepository
+      GameSession.Service.GameSessionService
       Lib
   other-modules:
       Paths_funpro
