@@ -25,17 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      API.ApiResponse
-      DB
-      Game.Controller.GameController
       Game.Model.GameModel
+      Game.Repository.GameRepository
       Game.Service.GameService
       Game.Service.GameValidator
-      GameSession.Controller.GameSessionController
-      GameSession.Model.GameSessionModel
-      GameSession.Service.GameSessionService
-      GameSession.Service.Generate
-      Hardcoded
       Lib
   other-modules:
       Paths_funpro
@@ -49,11 +42,10 @@ library
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
-    , bytestring
-    , postgresql-simple >=0.7
+    , mongoDB >=2.7.1.4
+    , mtl
     , random >=1.2
     , scotty >=0.22
-    , uuid >=1.3.16
   default-language: Haskell2010
 
 executable funpro
@@ -70,12 +62,11 @@ executable funpro
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
-    , bytestring
     , funpro
-    , postgresql-simple
+    , mongoDB
+    , mtl
     , random
     , scotty
-    , uuid >=1.3.16
   default-language: Haskell2010
 
 test-suite funpro-test
@@ -93,10 +84,9 @@ test-suite funpro-test
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
-    , bytestring
     , funpro
-    , postgresql-simple
+    , mongoDB
+    , mtl
     , random
     , scotty
-    , uuid >=1.3.16
   default-language: Haskell2010

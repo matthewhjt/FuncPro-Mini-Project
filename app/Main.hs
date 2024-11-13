@@ -1,12 +1,14 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main (main) where
 
-import Game.Controller.GameController (gameRoutes)
-import GameSession.Controller.GameSessionController (gameSessionRoutes)
-import DB (getConnection)
+import Web.Scotty ( get, scotty, ScottyM )
+import Game.Service.GameService (getAllGames)
+
+funpro :: ScottyM()
+funpro = do
+    get "/games" $ getAllGames
 
 main :: IO ()
 main = do
-  conn <- getConnection
-
-  gameRoutes conn
-  -- gameSessionRoutes conn
+    scotty 3000 funpro
