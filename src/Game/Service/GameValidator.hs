@@ -2,6 +2,7 @@ module Game.Service.GameValidator
     (
         isValidSudokuBoard,
         hasWinnerConnect4Board,
+        Board
     )
 where
 

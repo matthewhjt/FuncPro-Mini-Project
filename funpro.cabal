@@ -29,6 +29,7 @@ library
       Game.Repository.GameRepository
       Game.Service.GameService
       Game.Service.GameValidator
+      GameSession.Model.GameSessionModel
       Lib
   other-modules:
       Paths_funpro
