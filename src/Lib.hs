@@ -1,6 +1,6 @@
 module Lib (runDB) where
 
-import Database.MongoDB
+import Database.MongoDB ( connect, host, access, master, Action )
 
 runDB :: Action IO a -> IO a
 runDB act = do
