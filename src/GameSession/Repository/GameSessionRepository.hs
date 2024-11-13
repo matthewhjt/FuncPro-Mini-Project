@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module GameSession.Repository.GameSessionRepository (
     createGameSession,
     findGameSessionById
@@ -5,6 +6,7 @@ module GameSession.Repository.GameSessionRepository (
 import GameSession.Model.GameSessionModel (GameSession (..))
 import Lib (runDB)
 import Database.MongoDB
+    ( (=:), findOne, insert, Document, Value, Select(select) )
 import qualified Database.MongoDB as M (lookup)
 import Control.Monad.Reader (ReaderT(..))
 import Game.Service.GameValidator (Board)

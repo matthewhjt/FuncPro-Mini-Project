@@ -12,18 +12,18 @@ data GameSession = GameSession
     , isWin :: Bool
     } deriving (Show, Generic)
 
--- instance ToJSON GameSession where
---     toJSON (GameSession gameSessionId moves isWin) = object
---         [ "gameSessionId" .= show gameSessionId
---         , "moves" .= moves
---         , "isWin" .= isWin
---         ]
-
 instance ToJSON GameSession where
     toJSON (GameSession gameSessionId moves isWin) = object
-        [ "gameSession" .= object
-            [ "gameSessionId" .= show gameSessionId
-            , "moves" .= moves
-            , "isWin" .= isWin
-            ]
+        [ "gameSessionId" .= show gameSessionId
+        , "moves" .= moves
+        , "isWin" .= isWin
         ]
+
+-- instance ToJSON GameSession where
+--     toJSON (GameSession gameSessionId moves isWin) = object
+--         [ "gameSession" .= object
+--             [ "gameSessionId" .= show gameSessionId
+--             , "moves" .= moves
+--             , "isWin" .= isWin
+--             ]
+--         ]

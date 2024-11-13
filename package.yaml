@@ -26,6 +26,8 @@ dependencies:
   - aeson >= 2.1.2.1
   - random >= 1.2
   - mtl
+  - containers
+  - text
 
 ghc-options:
   - -Wall
@@ -58,6 +60,8 @@ executables:
       - mongoDB
       - random
       - mtl
+      - containers
+      - text
 
 tests:
   funpro-test:
@@ -73,3 +77,5 @@ tests:
       - mongoDB
       - random
       - mtl
+      - containers
+      - text
