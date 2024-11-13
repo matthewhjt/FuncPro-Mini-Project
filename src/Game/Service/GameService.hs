@@ -18,7 +18,7 @@ getAllGames = do
             , message = "Games retrieved successfully."
             , dataFields = Map.fromList
                 [
-                    ("game", toJSON games)
+                    ("games", toJSON games)
                 ]
             }
     json response
