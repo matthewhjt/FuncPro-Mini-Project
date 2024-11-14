@@ -11,7 +11,7 @@ import Data.Word ()
 import Numeric (readHex)
 import Data.Bson (ObjectId(Oid))
 import Data.Char (isHexDigit)
-import Control.Monad
+import Control.Monad ( guard )
 
 runDB :: Action IO a -> IO a
 runDB act = do
