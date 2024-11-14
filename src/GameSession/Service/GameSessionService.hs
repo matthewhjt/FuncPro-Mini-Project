@@ -1,14 +1,16 @@
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module GameSession.Service.GameSessionService (
-    createNewEasySudokuSession
+    createNewEasySudokuSession,
+    findGameSession
+    -- playGame
 ) where
 
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Web.Scotty (json, ActionM)
-import GameSession.Repository.GameSessionRepository (createGameSession)
+import Web.Scotty ( json, pathParam, ActionM )
+import GameSession.Repository.GameSessionRepository (createGameSession, findGameSessionById)
 import Game.Service.GameValidator (Board)
-import Lib (ApiResponse(..))
+import Lib (ApiResponse(..), safeCreateObjectId)
 import GameSession.Model.GameSessionModel (GameSession(..))
 import qualified Data.Map as Map
 import Data.Aeson (toJSON)
@@ -28,3 +30,20 @@ createNewEasySudokuSession = do
                 ]
             }
     json response
+
+findGameSession :: ActionM()
+findGameSession = do
+    gameSessionId <- pathParam "gameSessionId" :: ActionM String
+    let gameSessionObjectId = safeCreateObjectId gameSessionId
+    gameSession <- liftIO $ findGameSessionById gameSessionObjectId
+
+    let notFoundResponse = ApiResponse
+                        { code = 404
+                        , success = False
+                        , message = "GameSession Not Found"
+                        , dataFields = Map.empty
+                        }
+
+    case gameSession of
+        Just gS -> json gS
+        Nothing -> json notFoundResponse

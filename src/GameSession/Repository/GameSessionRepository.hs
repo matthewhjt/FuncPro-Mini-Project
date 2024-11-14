@@ -6,20 +6,22 @@ module GameSession.Repository.GameSessionRepository (
 import GameSession.Model.GameSessionModel (GameSession (..))
 import Lib (runDB)
 import Database.MongoDB
-    ( (=:), findOne, insert, Document, Value, Select(select) )
+    ( (=:), findOne, insert, Document, Value, Select(select), ObjectId)
 import qualified Database.MongoDB as M (lookup)
 import Control.Monad.Reader (ReaderT(..))
 import Game.Service.GameValidator (Board)
+import Data.Bson (valMaybe)
+
 
 createGameSession :: Board -> IO Value
 createGameSession board = do
   runDB $ insert "gameSession" ["moves" =: [board], "isWin" =: False]
 
-findGameSessionById :: Value -> IO (Maybe GameSession)
+findGameSessionById :: Maybe ObjectId -> IO (Maybe GameSession)
 findGameSessionById sessionId = do
-  doc <- runDB $ findOne $ select ["_id" =: sessionId] "gameSession"
+  doc <- runDB $ findOne $ select ["_id" =: valMaybe sessionId] "gameSession"
   return $ doc >>= fromDoc
-
+  
 toDoc :: GameSession -> Document
 toDoc s = ["_id" =: gameSessionId s, "moves" =: moves s, "isWin" =: isWin s]
 

@@ -46,6 +46,7 @@ library
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bson
     , containers
     , mongoDB >=2.7.1.4
     , mtl
@@ -68,6 +69,7 @@ executable funpro
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bson
     , containers
     , funpro
     , mongoDB
@@ -92,6 +94,7 @@ test-suite funpro-test
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bson
     , containers
     , funpro
     , mongoDB

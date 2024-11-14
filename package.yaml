@@ -28,6 +28,7 @@ dependencies:
   - mtl
   - containers
   - text
+  - bson
 
 ghc-options:
   - -Wall
@@ -62,6 +63,7 @@ executables:
       - mtl
       - containers
       - text
+      - bson
 
 tests:
   funpro-test:
@@ -79,3 +81,4 @@ tests:
       - mtl
       - containers
       - text
+      - bson
