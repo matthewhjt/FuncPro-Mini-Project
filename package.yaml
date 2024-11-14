@@ -26,6 +26,12 @@ dependencies:
   - aeson >= 2.1.2.1
   - random >= 1.2
   - mtl
+  - containers
+  - jwt
+  - time
+  - text >= 2.0.2
+  - wai >= 3.2.4
+  - http-types >= 0.12.4
 
 ghc-options:
   - -Wall
