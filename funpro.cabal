@@ -32,8 +32,12 @@ library
       Auth.Service.AuthService
       Game.Model.GameModel
       Game.Repository.GameRepository
+      Game.Service.GameGenerator
       Game.Service.GameService
       Game.Service.GameValidator
+      GameSession.Model.GameSessionModel
+      GameSession.Repository.GameSessionRepository
+      GameSession.Service.GameSessionService
       Lib
   other-modules:
       Paths_funpro
@@ -47,6 +51,7 @@ library
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bson
     , bcrypt
     , containers
     , http-types >=0.12.4
@@ -74,6 +79,7 @@ executable funpro
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bson
     , bcrypt
     , containers
     , funpro
@@ -103,6 +109,7 @@ test-suite funpro-test
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bson
     , bcrypt
     , containers
     , funpro

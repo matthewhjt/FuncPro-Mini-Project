@@ -19,3 +19,4 @@ instance ToJSON Game where
         , "name" .= name
         , "gameType" .= gameType
         ]
+    

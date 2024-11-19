@@ -6,6 +6,8 @@ import Control.Monad.IO.Class (MonadIO(liftIO))
 import Game.Repository.GameRepository (findGames)
 import Web.Scotty (json, ActionM)
 import Lib (ApiResponse(..))
+import qualified Data.Map as Map
+import Data.Aeson (toJSON)
 
 getAllGames :: ActionM ()
 getAllGames = do
@@ -14,6 +16,9 @@ getAllGames = do
             { code = 200
             , success = True
             , message = "Games retrieved successfully."
-            , dataField = games
+            , dataFields = Map.fromList
+                [
+                    ("games", toJSON games)
+                ]
             }
     json response
