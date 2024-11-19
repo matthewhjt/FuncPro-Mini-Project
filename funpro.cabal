@@ -47,6 +47,7 @@ library
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bcrypt
     , containers
     , http-types >=0.12.4
     , jwt
@@ -73,6 +74,7 @@ executable funpro
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bcrypt
     , containers
     , funpro
     , http-types >=0.12.4
@@ -101,6 +103,7 @@ test-suite funpro-test
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
+    , bcrypt
     , containers
     , funpro
     , http-types >=0.12.4

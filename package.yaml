@@ -32,6 +32,7 @@ dependencies:
   - text >= 2.0.2
   - wai >= 3.2.4
   - http-types >= 0.12.4
+  - bcrypt
 
 ghc-options:
   - -Wall

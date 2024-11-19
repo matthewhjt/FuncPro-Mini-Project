@@ -12,25 +12,33 @@ import Web.JWT
       toVerify,
       JWT,
       VerifiedJWT,
-      claims,
       stringOrURI,
       iss,
       exp,
       numericDate
     )
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import Data.Time.Clock.POSIX (getPOSIXTime)
+import System.Environment (lookupEnv)
+import Control.Exception (throwIO)
 
-secretKey :: Text
-secretKey = "funpro-is-very-fun"
+secretKey :: IO Text
+secretKey = do
+    maybeKey <- lookupEnv "SECRET_KEY"
+    case maybeKey of
+        Just key -> return $ pack key
+        Nothing -> throwIO $ userError "Environment variable SECRET_KEY is not set."
 
 createToken :: Text -> IO Text
 createToken username = do
     currentTime <- getPOSIXTime
     let expiry = currentTime + 3600  -- Token expiry (1 hour)
+    secretKeyValue <- secretKey
     let payload = mempty { iss = stringOrURI username, Web.JWT.exp = numericDate expiry }
-    let token = encodeSigned (hmacSecret secretKey) mempty payload
+    let token = encodeSigned (hmacSecret secretKeyValue) mempty payload
     return token
 
-verifyToken :: Text -> Maybe (JWT VerifiedJWT)
-verifyToken token = decodeAndVerifySignature (toVerify $ hmacSecret secretKey) token
+verifyToken :: Text -> IO (Maybe (JWT VerifiedJWT))
+verifyToken token = do
+    key <- secretKey
+    return $ decodeAndVerifySignature (toVerify $ hmacSecret key) token

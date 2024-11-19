@@ -10,7 +10,7 @@ import Auth.Security.JWTUtils (verifyToken)
 import Data.Text.Lazy (toStrict)
 import qualified Data.Text as T
 import Data.Aeson (object, (.=))
-import Data.Maybe (isNothing)
+import Control.Monad.IO.Class (liftIO)
 
 authMiddleware :: ActionM () -> ActionM ()
 authMiddleware next = do
@@ -22,9 +22,11 @@ authMiddleware next = do
                 cleanToken = T.stripPrefix "Bearer " tokenText
             case cleanToken of
                 Nothing -> unauthorizedResponse
-                Just t -> if isNothing (verifyToken t)
-                         then unauthorizedResponse
-                         else next
+                Just t -> do
+                    verified <- liftIO $ verifyToken t
+                    case verified of
+                        Nothing -> unauthorizedResponse
+                        Just _ -> next
 
 unauthorizedResponse :: ActionM ()
 unauthorizedResponse = do
