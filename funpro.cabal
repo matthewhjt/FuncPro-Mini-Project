@@ -51,8 +51,8 @@ library
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
-    , bson
     , bcrypt
+    , bson
     , containers
     , http-types >=0.12.4
     , jwt
@@ -79,8 +79,8 @@ executable funpro
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
-    , bson
     , bcrypt
+    , bson
     , containers
     , funpro
     , http-types >=0.12.4
@@ -89,7 +89,7 @@ executable funpro
     , mtl
     , random
     , scotty
-    , text >=2.0.2
+    , text
     , time
     , wai >=3.2.4
   default-language: Haskell2010
@@ -109,8 +109,8 @@ test-suite funpro-test
   build-depends:
       aeson >=2.1.2.1
     , base >=4.7 && <5
-    , bson
     , bcrypt
+    , bson
     , containers
     , funpro
     , http-types >=0.12.4
@@ -119,7 +119,7 @@ test-suite funpro-test
     , mtl
     , random
     , scotty
-    , text >=2.0.2
+    , text
     , time
     , wai >=3.2.4
   default-language: Haskell2010
