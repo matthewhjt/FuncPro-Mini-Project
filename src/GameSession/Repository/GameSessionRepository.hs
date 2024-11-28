@@ -1,12 +1,14 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module GameSession.Repository.GameSessionRepository (
     createGameSession,
-    findGameSessionById
+    findGameSessionById,
+    updateGameSession,
+    getMoves
 ) where
 import GameSession.Model.GameSessionModel (GameSession (..))
 import Lib (runDB)
 import Database.MongoDB
-    ( (=:), findOne, insert, Document, Value, Select(select), ObjectId)
+    ( (=:), findOne, insert, Document, Value, Select(select), ObjectId, save)
 import qualified Database.MongoDB as M (lookup)
 import Control.Monad.Reader (ReaderT(..))
 import Game.Service.GameValidator (Board)
@@ -21,6 +23,17 @@ findGameSessionById :: Maybe ObjectId -> IO (Maybe GameSession)
 findGameSessionById sessionId = do
   doc <- runDB $ findOne $ select ["_id" =: valMaybe sessionId] "gameSession"
   return $ doc >>= fromDoc
+
+updateGameSession :: Value -> GameSession -> IO (Maybe GameSession)
+updateGameSession sessionId gameSession = do
+  let query = select ["_id" =: sessionId] "gameSession"
+  let gameSessionDoc = toDoc gameSession
+  existingDoc <- runDB $ findOne query
+  case existingDoc of
+    Nothing -> return Nothing
+    Just _ -> do
+      _ <- runDB $ save "gameSession" gameSessionDoc
+      return $ Just gameSession
   
 toDoc :: GameSession -> Document
 toDoc s = ["_id" =: gameSessionId s, "moves" =: moves s, "isWin" =: isWin s]
