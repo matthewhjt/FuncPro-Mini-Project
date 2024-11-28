@@ -32,10 +32,12 @@ fillDiagonal board = foldM (\b i -> fillBox b i i) board [0, 3, 6]
 fillBox :: Board -> Int -> Int -> IO Board
 fillBox board row col = do
   nums <- shuffle [1..9]
-  return $ placeNumbers nums board (zip [0..8] (replicate 1 row ++ replicate 1 col))
+  let positions = [(r, c) | r <- [row..row+2], c <- [col..col+2]]
+  return $ placeNumbers nums board positions
 
 placeNumbers :: [Int] -> Board -> [(Int, Int)] -> Board
 placeNumbers [] board _ = board
+placeNumbers _ board [] = board
 placeNumbers (n:ns) board ((r, c):rcs) =
   let newBoard = replace2D r c n board
   in placeNumbers ns newBoard rcs

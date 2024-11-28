@@ -13,7 +13,7 @@ import Auth.Model.UserModel (User(..))
 funpro :: ScottyM()
 funpro = do
     get "/games" getAllGames
-    get "/gameSession/newGame/sudoku/easy" createNewEasySudokuSession 
+    get "/gameSession/newGame/sudoku/easy" $ authMiddleware createNewEasySudokuSession
     get "/gameSession/:gameSessionId" findGameSession
     -- put "/gameSession/:gameSessionId" playGame
     

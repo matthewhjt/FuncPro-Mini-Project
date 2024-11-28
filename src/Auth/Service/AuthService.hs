@@ -32,7 +32,7 @@ registerUser inputUsername inputPassword = do
             { code = 409
             , success = False
             , message = "Username is already taken."
-            , dataField = Nothing :: Maybe User
+            , dataFields = Map.empty
             })
         else do
             hashedPwd <- liftIO $ hashPassword inputPassword
@@ -42,7 +42,7 @@ registerUser inputUsername inputPassword = do
                 { code = 201
                 , success = True
                 , message = "User successfully registered."
-                , dataField = Nothing :: Maybe User
+                , dataFields = Map.empty
                 })
 
 login :: Text -> Text -> ActionM ()
