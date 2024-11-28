@@ -2,7 +2,8 @@
 
 module Auth.Security.JWTUtils (
     createToken,
-    verifyToken
+    verifyToken,
+    refreshToken
 ) where
 
 import Web.JWT
@@ -12,15 +13,17 @@ import Web.JWT
       toVerify,
       JWT,
       VerifiedJWT,
+      claims,
       stringOrURI,
       iss,
       exp,
       numericDate
     )
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import System.Environment (lookupEnv)
 import Control.Exception (throwIO)
+import Data.Maybe (fromMaybe)
 
 secretKey :: IO Text
 secretKey = do
@@ -32,7 +35,7 @@ secretKey = do
 createToken :: Text -> IO Text
 createToken username = do
     currentTime <- getPOSIXTime
-    let expiry = currentTime + 3600  -- Token expiry (1 hour)
+    let expiry = currentTime + 7200  -- Token expiry (2 hour)
     secretKeyValue <- secretKey
     let payload = mempty { iss = stringOrURI username, Web.JWT.exp = numericDate expiry }
     let token = encodeSigned (hmacSecret secretKeyValue) mempty payload
@@ -42,3 +45,17 @@ verifyToken :: Text -> IO (Maybe (JWT VerifiedJWT))
 verifyToken token = do
     key <- secretKey
     return $ decodeAndVerifySignature (toVerify $ hmacSecret key) token
+
+refreshToken :: Text -> IO (Maybe Text)
+refreshToken token = do
+    key <- secretKey
+    case decodeAndVerifySignature (toVerify $ hmacSecret key) token of
+        Nothing -> return Nothing  -- Invalid token
+        Just jwt -> do
+            let claimsSet = claims jwt
+                username = fmap (pack . show) (iss claimsSet)  -- Convert StringOrURI to Text
+            case username of
+                Nothing -> return Nothing  -- Missing `iss` claim
+                Just usr -> do
+                    newToken <- createToken usr  -- Call createToken
+                    return (Just newToken)       -- Wrap the result in Just
