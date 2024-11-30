@@ -9,8 +9,7 @@ module GameSession.Service.GameSessionService (
 import Control.Monad.IO.Class (MonadIO(liftIO))
 import Web.Scotty ( json, pathParam, ActionM, jsonData )
 import GameSession.Repository.GameSessionRepository (createGameSession, findGameSessionById, updateGameSession)
-import Game.Service.GameValidator (Board)
-import Lib (ApiResponse(..), safeCreateObjectId)
+import Lib (ApiResponse(..), notFoundResponse, safeCreateObjectId)
 import GameSession.Model.GameSessionModel 
     (GameSession(..)
     , PlaySudokuRequest(..)
@@ -19,7 +18,7 @@ import GameSession.Model.GameSessionModel
 import qualified Data.Map as Map
 import Data.Aeson (toJSON)
 import Data.Maybe
-import Game.Service.GameGenerator (generateEasySudoku)
+import Game.Service.GameGenerator.Sudoku (generateEasySudoku)
 
 createNewEasySudokuSession :: ActionM()
 createNewEasySudokuSession = do
@@ -43,16 +42,9 @@ findGameSession = do
     let gameSessionObjectId = safeCreateObjectId gameSessionId
     gameSession <- liftIO $ findGameSessionById gameSessionObjectId
 
-    let notFoundResponse = ApiResponse
-                        { code = 404
-                        , success = False
-                        , message = "GameSession Not Found"
-                        , dataFields = Map.empty
-                        }
-
     case gameSession of
         Just gS -> json gS
-        Nothing -> json notFoundResponse
+        Nothing -> json $ notFoundResponse "Game session not found." Map.empty
 
 playGame :: ActionM ()
 playGame = do
@@ -60,15 +52,8 @@ playGame = do
     let gameSessionObjectId = safeCreateObjectId gameSessionId
     prevTurn <- liftIO $ findGameSessionById gameSessionObjectId
 
-    let notFoundResponse = ApiResponse
-                        { code = 404
-                        , success = False
-                        , message = "GameSession Not Found"
-                        , dataFields = Map.empty
-                        }
-
     if isNothing prevTurn
-    then json notFoundResponse
+    then json $ notFoundResponse "Game session not found." Map.empty
     else do
         let (GameSession gameSessionId gameMoves isWin) = fromJust prevTurn
         req <- jsonData :: ActionM PlaySudokuRequest

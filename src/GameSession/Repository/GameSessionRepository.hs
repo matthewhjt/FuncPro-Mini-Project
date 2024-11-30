@@ -11,7 +11,7 @@ import Database.MongoDB
     ( (=:), findOne, insert, Document, Value, Select(select), ObjectId, save)
 import qualified Database.MongoDB as M (lookup)
 import Control.Monad.Reader (ReaderT(..))
-import Game.Service.GameValidator (Board)
+import Game.Service.GameValidator.GameValidator (Board)
 import Data.Bson (valMaybe)
 
 

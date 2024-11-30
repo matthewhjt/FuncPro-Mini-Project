@@ -32,9 +32,9 @@ library
       Auth.Service.AuthService
       Game.Model.GameModel
       Game.Repository.GameRepository
-      Game.Service.GameGenerator
+      Game.Service.GameGenerator.Sudoku
       Game.Service.GameService
-      Game.Service.GameValidator
+      Game.Service.GameValidator.GameValidator
       GameSession.Model.GameSessionModel
       GameSession.Repository.GameSessionRepository
       GameSession.Service.GameSessionService

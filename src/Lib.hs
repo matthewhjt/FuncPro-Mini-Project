@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-module Lib (runDB, ApiResponse(..), safeCreateObjectId) where
+module Lib (runDB, ApiResponse(..), notFoundResponse, safeCreateObjectId) where
 
 import Database.MongoDB (connect, host, access, master, Action)
 import Data.Aeson (object, Key, Value, KeyValue((.=)), ToJSON(toJSON))
@@ -24,6 +24,15 @@ data ApiResponse = ApiResponse
     , message :: String
     , dataFields :: Map Key Value
     } deriving (Show, Generic)
+
+
+notFoundResponse :: String -> Map Key Value -> ApiResponse
+notFoundResponse msg d = ApiResponse
+                        { code = 404
+                        , success = False
+                        , message = msg
+                        , dataFields = d
+                        }
 
 instance ToJSON ApiResponse where
     toJSON (ApiResponse code success message dataFields) = 

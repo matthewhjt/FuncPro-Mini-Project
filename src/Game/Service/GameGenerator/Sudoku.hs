@@ -1,4 +1,4 @@
-module Game.Service.GameGenerator
+module Game.Service.GameGenerator.Sudoku
     ( generateEasySudoku, generateMediumSudoku, generateHardSudoku
     ) where
 
@@ -6,7 +6,7 @@ import System.Random (randomRIO)
 import Data.List (delete)
 import Control.Monad (forM_, foldM)
 import Data.Maybe (isJust)
-import Game.Service.GameValidator (isValidSudokuBoard, Board)
+import Game.Service.GameValidator.GameValidator (isValidSudokuBoard, Board)
 
 emptyBoard :: Board
 emptyBoard = replicate 9 (replicate 9 0)

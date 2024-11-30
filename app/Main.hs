@@ -2,13 +2,12 @@
 
 module Main (main) where
 
-import Web.Scotty ( get, put, post, scotty, jsonData, formParam, ScottyM, ActionM )
+import Web.Scotty ( get, put, post, scotty, formParam, ScottyM, ActionM )
 import Data.Text.Lazy (Text, toStrict)
 import Game.Service.GameService (getAllGames)
 import GameSession.Service.GameSessionService (createNewEasySudokuSession, findGameSession, playGame)
 import Auth.Service.AuthService (registerUser, login)
 import Auth.Security.AuthMiddleware (authMiddleware)
-import Auth.Model.UserModel (User(..))
 
 funpro :: ScottyM()
 funpro = do
@@ -29,4 +28,4 @@ funpro = do
 
 main :: IO ()
 main = do
-    scotty 3000 funpro
+    scotty 3001 funpro

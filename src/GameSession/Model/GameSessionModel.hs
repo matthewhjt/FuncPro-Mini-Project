@@ -9,7 +9,7 @@ module GameSession.Model.GameSessionModel
     ) where
 
 import GHC.Generics (Generic)
-import Game.Service.GameValidator (Board)
+import Game.Service.GameValidator.GameValidator (Board)
 import Data.Aeson (ToJSON (toJSON), object, (.=), FromJSON (parseJSON), withObject, (.:))
 import Database.MongoDB (Value, val)
 import Data.Text (unpack)
