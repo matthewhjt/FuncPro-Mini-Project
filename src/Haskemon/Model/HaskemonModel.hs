@@ -1,17 +1,27 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Haskemon.Model.HaskemonModel
-    ( HaskemonModel (..)
+    ( HaskemonModel
+    , HaskemonModel (..)
     , Element (..)
     , HaskemonStats(..)
     , mkHaskemonStats
+    , parseElement
     )
     where
 
-data HaskemonModel = Haskemon
-    { healthPoint :: HP,
+import GHC.Generics (Generic)
+import Database.MongoDB (ObjectId)
+
+data HaskemonModel = HaskemonModel
+    { 
+      name :: String,
+      healthPoint :: HP,
       mana :: Mana,
       element :: Element,
-      stats :: HaskemonStats
-    } deriving (Show)
+      stats :: HaskemonStats,
+      userId :: String
+    } deriving (Show, Generic)
 
 type HP = Int
 type Mana = Int
@@ -34,6 +44,13 @@ data HaskemonStats = HaskemonStats
     { attack :: Int
     , defense :: Int
     } deriving (Show)
+
+parseElement :: String -> Maybe Element
+parseElement "Fire"  = Just Fire
+parseElement "Water" = Just Water
+parseElement "Earth" = Just Earth
+parseElement "Air"   = Just Air
+parseElement _       = Nothing
 
 mkHaskemonStats :: Int -> Int -> Maybe HaskemonStats
 mkHaskemonStats atk def

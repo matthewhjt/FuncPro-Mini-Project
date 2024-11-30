@@ -14,7 +14,6 @@ import Control.Monad.Reader (ReaderT(..))
 import Game.Service.GameValidator (Board)
 import Data.Bson (valMaybe)
 
-
 createGameSession :: Board -> IO Value
 createGameSession board = do
   runDB $ insert "gameSession" ["moves" =: [board], "isWin" =: False]

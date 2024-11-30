@@ -39,6 +39,9 @@ library
       GameSession.Repository.GameSessionRepository
       GameSession.Service.GameSessionService
       Haskemon.Model.HaskemonModel
+      Haskemon.Model.HaskemonSessionModel
+      Haskemon.Repository.HaskemonRepository
+      Haskemon.Repository.HaskemonSessionRepository
       Haskemon.Service.HaskemonService
       Lib
   other-modules:
@@ -64,6 +67,7 @@ library
     , scotty >=0.22
     , text >=2.0.2
     , time
+    , transformers >=0.6.1.0
     , wai >=3.2.4
   default-language: Haskell2010
 
@@ -93,6 +97,7 @@ executable funpro
     , scotty
     , text
     , time
+    , transformers >=0.6.1.0
     , wai >=3.2.4
   default-language: Haskell2010
 
@@ -123,5 +128,6 @@ test-suite funpro-test
     , scotty
     , text
     , time
+    , transformers >=0.6.1.0
     , wai >=3.2.4
   default-language: Haskell2010
