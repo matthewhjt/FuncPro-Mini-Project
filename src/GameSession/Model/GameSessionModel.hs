@@ -3,9 +3,7 @@
 module GameSession.Model.GameSessionModel 
     (
     GameSession(..),
-    getGameSessionMoves,
     PlaySudokuRequest(..),
-    getPlaySudokuRequestMove
     ) where
 
 import GHC.Generics (Generic)
@@ -35,17 +33,10 @@ instance FromJSON GameSession where
         let gameSessionId = val (unpack gameSessionIdStr)
         return $ GameSession gameSessionId moves isWin
 
-
-getGameSessionMoves :: GameSession -> [Board]
-getGameSessionMoves (GameSession _ moves _) = moves
-
 newtype PlaySudokuRequest = PlaySudokuRequest 
     {
     move :: Board
     }
-
-getPlaySudokuRequestMove :: PlaySudokuRequest -> Board
-getPlaySudokuRequestMove (PlaySudokuRequest move) = move
 
 instance FromJSON PlaySudokuRequest where
     parseJSON = withObject "PlaySudokuRequest" $ \v -> do
