@@ -1,10 +1,15 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Game.Service.GameGenerator.Sudoku
-    ( generateEasySudoku, generateMediumSudoku, generateHardSudoku, isBoardFilled
+    ( generateEasySudoku
+    , generateMediumSudoku
+    , generateHardSudoku
+    , isBoardFilled
+    , safeReplace2D
     ) where
 
 import System.Random (randomRIO)
-import Data.List (delete)
-import Control.Monad (forM_, foldM)
+import Control.Monad (foldM)
 import Data.Maybe (isJust)
 import Game.Service.GameValidator.GameValidator (isValidSudokuBoard, Board)
 
@@ -23,16 +28,10 @@ generateHardSudoku = generateSudoku 60
 generateSudoku :: Int -> IO Board
 generateSudoku numHoles = do
   board <- fillDiagonal emptyBoard
-  putStrLn "Created board diagonals:"
-  print board
   case fillRemaining board 0 3 of
     (Just fullBoard, True) -> do
-      putStrLn "Filled full board:"
-      print fullBoard
-      putStrLn "Removing numbers..."
       removeNumbers fullBoard numHoles
     _ -> do
-      putStrLn "Failed to generate Sudoku, retrying..."
       generateSudoku numHoles
 
 fillDiagonal :: Board -> IO Board
@@ -101,3 +100,13 @@ replace2D row col newVal board =
   take row board ++
   [take col (board !! row) ++ [newVal] ++ drop (col + 1) (board !! row)] ++
   drop (row + 1) board
+
+safeReplace2D :: Int -> Int -> Int -> Board -> Maybe Board
+safeReplace2D row col newVal board
+  | row < 0 || row >= length board = Nothing
+  | col < 0 || col >= length (board !! row) = Nothing
+  | (board !! row) !! col == newVal = Nothing
+  | otherwise = Just $
+      take row board ++
+      [take col (board !! row) ++ [newVal] ++ drop (col + 1) (board !! row)] ++
+      drop (row + 1) board

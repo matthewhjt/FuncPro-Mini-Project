@@ -33,12 +33,6 @@ errorResponse c = ApiResponse c False
 
 notFoundResponse :: String -> Map Key Value -> ApiResponse
 notFoundResponse = ApiResponse 404 False
--- notFoundResponse msg d = ApiResponse
---                         { code = 404
---                         , success = False
---                         , message = msg
---                         , dataFields = d
---                         }
 
 instance ToJSON ApiResponse where
     toJSON (ApiResponse code success message dataFields) =
