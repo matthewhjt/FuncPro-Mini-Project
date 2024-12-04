@@ -12,7 +12,7 @@ import Database.MongoDB
 import qualified Database.MongoDB as M (lookup)
 import Game.Service.GameValidator.GameValidator (Board)
 import Data.Bson (valMaybe)
-import Haskemon.Model.HaskemonModel
+import Haskemon.Model.HaskemonModel (HaskemonModel)
 
 createGameSession :: GameSession a -> IO Value
 createGameSession gameSession = do

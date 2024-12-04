@@ -50,12 +50,12 @@ refreshToken :: Text -> IO (Maybe Text)
 refreshToken token = do
     key <- secretKey
     case decodeAndVerifySignature (toVerify $ hmacSecret key) token of
-        Nothing -> return Nothing  -- Invalid token
+        Nothing -> return Nothing
         Just jwt -> do
             let claimsSet = claims jwt
-                username = fmap (pack . show) (iss claimsSet)  -- Convert StringOrURI to Text
+                username = fmap (pack . show) (iss claimsSet)
             case username of
-                Nothing -> return Nothing  -- Missing `iss` claim
+                Nothing -> return Nothing
                 Just usr -> do
-                    newToken <- createToken usr  -- Call createToken
-                    return (Just newToken)       -- Wrap the result in Just
+                    newToken <- createToken usr
+                    return (Just newToken)

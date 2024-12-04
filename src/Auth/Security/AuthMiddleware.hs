@@ -7,14 +7,13 @@ module Auth.Security.AuthMiddleware (
 import Web.Scotty (ActionM, header, json, status, setHeader)
 import Network.HTTP.Types.Status (unauthorized401)
 import Auth.Security.JWTUtils (verifyToken, refreshToken)
-import Data.Text.Lazy (toStrict)
+import Data.Text.Lazy (toStrict, fromStrict)
 import qualified Data.Text as T
 import Data.Aeson (object, (.=))
 import Control.Monad.IO.Class (liftIO)
-import Data.Text.Lazy (fromStrict)
-import qualified Data.Text as T
+import Web.JWT (claims, iss, VerifiedJWT, JWT)
 
-authMiddleware :: ActionM () -> ActionM ()
+authMiddleware :: (String -> ActionM ()) -> ActionM ()
 authMiddleware next = do
     authHeader <- header "Authorization"
     case authHeader of
@@ -29,13 +28,19 @@ authMiddleware next = do
                     case verified of
                         Nothing -> unauthorizedResponse
                         Just jwt -> do
-                            -- Refresh token if necessary
-                            refreshedToken <- liftIO $ refreshToken t
-                            case refreshedToken of
+                            let username = extractUsername jwt
+                            case username of
                                 Nothing -> unauthorizedResponse
-                                Just newToken -> do
-                                    setHeader "X-Refreshed-Token" (fromStrict newToken) -- Add new token to the response
-                                    next
+                                Just usr -> do
+                                    refreshedToken <- liftIO $ refreshToken t
+                                    case refreshedToken of
+                                        Nothing -> unauthorizedResponse
+                                        Just newToken -> do
+                                            setHeader "X-Refreshed-Token" (fromStrict newToken)
+                                            next (T.unpack usr)
+
+extractUsername :: Web.JWT.JWT Web.JWT.VerifiedJWT -> Maybe T.Text
+extractUsername jwt = fmap (T.pack . show) (iss (claims jwt))
 
 unauthorizedResponse :: ActionM ()
 unauthorizedResponse = do
