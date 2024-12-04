@@ -3,16 +3,21 @@
 
 module Main (main) where
 
-import Web.Scotty (get, put, post, scotty, json, jsonData, formParam, param, ScottyM, ActionM, rescue)
+import Web.Scotty (get, put, post, scotty, json, jsonData, formParam, param, ScottyM, ActionM, rescue, middleware)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text.Lazy (Text, toStrict)
 import qualified Data.Map as Map
+import qualified Data.Text as T
+import qualified Database.MongoDB as Mongo
 import Game.Service.GameService (getAllGames)
 import GameSession.Service.GameSessionService (createNewEasySudokuSession, findGameSession, playGame)
 import Auth.Service.AuthService (registerUser, login)
 import Auth.Security.AuthMiddleware (authMiddleware)
-import Haskemon.Service.HaskemonService (createHaskemonForUser, createGameSession)
+import Haskemon.Service.HaskemonService (createHaskemonForUser, createGameSession, findHaskemonSession, playHaskemon)
 import Web.Scotty.Internal.Types (ScottyException)
+import Data.List.Split (splitOn)
+import Data.Maybe (mapMaybe)
+import Lib (safeCreateObjectId, corsMiddleware)
 
 handleParam :: ActionM a -> a -> ActionM a
 handleParam action defaultValue = action `rescue` (\(_ :: ScottyException) -> return defaultValue)
@@ -30,24 +35,14 @@ createHaskemonEndpoint = post "/haskemon" $ authMiddleware $ \username -> do
     json response
 
 
-createGameSessionEndpoint :: ScottyM ()
-createGameSessionEndpoint = post "/gameSession" $ authMiddleware $ \username -> do
-    team1Ids <- formParam "team1" `rescue` const (return [])
-    team2Ids <- formParam "team2" `rescue` const (return [])
-    result <- liftIO $ createGameSession username team1Ids team2Ids
-    case result of
-        Left err -> json ApiResponse
-            { code = 400
-            , success = False
-            , message = err
-            , dataFields = Map.empty
-            }
-        Right session -> json ApiResponse
-            { code = 200
-            , success = True
-            , message = "Game session created successfully."
-            , dataFields = Map.fromList [("sessionId", toJSON $ show (sessionId session))]
-            }
+createHaskemonSessionEndpoint :: ScottyM ()
+createHaskemonSessionEndpoint = post "/gameSession" $ authMiddleware $ \username -> do
+    teamIdsStr <- handleParam (formParam "team") ""
+    let teamIds = mapMaybe safeCreateObjectId (splitOn "," teamIdsStr)
+    
+    liftIO $ print teamIds
+    response <- liftIO $ createGameSession username teamIds
+    json response
 
 funpro :: ScottyM()
 funpro = do
@@ -55,6 +50,8 @@ funpro = do
     get "/gameSession/newGame/sudoku/easy" $ authMiddleware $ \_ -> createNewEasySudokuSession
     get "/gameSession/:gameSessionId" findGameSession
     put "/gameSession/:gameSessionId" playGame
+    get "/haskemonSession/:haskemonSessionId" findHaskemonSession
+    put "/haskemonSession/:haskemonSessionId" playHaskemon
     
     post "/register" $ do
         uname <- formParam "username" :: ActionM Text
@@ -67,7 +64,10 @@ funpro = do
         login (toStrict uname) (toStrict pwd)
 
     createHaskemonEndpoint
+    createHaskemonSessionEndpoint
 
 main :: IO ()
 main = do
-    scotty 3000 funpro
+    scotty 3001 (do
+        middleware corsMiddleware
+        funpro)

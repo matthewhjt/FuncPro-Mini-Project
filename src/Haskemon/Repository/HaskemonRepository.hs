@@ -4,6 +4,7 @@ module Haskemon.Repository.HaskemonRepository (
     getHaskemonByName,
     getHaskemonsByIds,
     toDoc,
+    fromDoc,
 ) where
 
 import Database.MongoDB

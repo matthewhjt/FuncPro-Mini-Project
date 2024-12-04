@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-module Lib (runDB, ApiResponse(..), safeCreateObjectId) where
+module Lib (runDB, ApiResponse(..), safeCreateObjectId, corsMiddleware) where
 
 import Database.MongoDB (connect, host, access, master, Action)
 import Data.Aeson (object, Key, Value, KeyValue((.=)), ToJSON(toJSON))
@@ -12,6 +12,8 @@ import Numeric (readHex)
 import Data.Bson (ObjectId(Oid))
 import Data.Char (isHexDigit)
 import Control.Monad ( guard )
+import Network.Wai.Middleware.Cors
+import Network.Wai (Middleware)
 
 runDB :: Action IO a -> IO a
 runDB act = do
@@ -59,3 +61,18 @@ safeCreateObjectId hexStr = do
                 then Just value 
                 else Nothing
             _ -> Nothing
+
+corsMiddleware :: Middleware
+corsMiddleware = cors $ const $ Just corsResourcePolicy
+
+corsResourcePolicy :: CorsResourcePolicy
+corsResourcePolicy = simpleCorsResourcePolicy
+    { corsOrigins = Just (["http://localhost:5173"], True)  -- Vite dev server
+    , corsMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    , corsRequestHeaders = ["Content-Type", "Authorization"]
+    , corsExposedHeaders = Nothing
+    , corsMaxAge = Nothing
+    , corsVaryOrigin = True
+    , corsRequireOrigin = False
+    , corsIgnoreFailures = True
+    }

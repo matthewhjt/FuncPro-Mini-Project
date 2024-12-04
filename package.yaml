@@ -35,6 +35,8 @@ dependencies:
   - http-types >= 0.12.4
   - bcrypt
   - transformers >= 0.6.1.0
+  - split
+  - wai-cors
 
 ghc-options:
   - -Wall
