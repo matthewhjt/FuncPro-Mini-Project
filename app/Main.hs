@@ -52,8 +52,8 @@ funpro :: ScottyM()
 funpro = do
     get "/games" getAllGames
     get "/gameSession/newGame/sudoku/:difficulty" $ authMiddleware $ \_ -> createSudokuSession
-    get "/gameSession/:gameSessionId" $ authMiddleware findGameSession
-    put "/playGame/sudoku/:gameSessionId" $ authMiddleware playSudoku
+    get "/gameSession/:gameSessionId" $ authMiddleware $ \_ -> findGameSession
+    put "/playGame/sudoku/:gameSessionId" $ authMiddleware $ \_ -> playSudoku
     get "/haskemonSession/:haskemonSessionId" findHaskemonSession
     put "/haskemonSession/:haskemonSessionId" playHaskemon
     

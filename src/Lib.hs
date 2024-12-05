@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Lib (runDB, ApiResponse(..), successResponse, errorResponse, notFoundResponse, safeCreateObjectId, corsMiddleware) where
 
-import Database.MongoDB (connect, host, access, master, Action)
+import Database.MongoDB (connect, host, access, master, Action, auth)
 import Data.Aeson (object, Key, Value, KeyValue((.=)), ToJSON(toJSON))
 import GHC.Generics (Generic)
 import Data.Map (Map)

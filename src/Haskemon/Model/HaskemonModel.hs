@@ -17,6 +17,7 @@ import Database.MongoDB (ObjectId)
 import Data.Aeson (ToJSON (toJSON), FromJSON (parseJSON), object, (.=), withObject, (.:), genericToJSON, genericParseJSON, defaultOptions)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Bson
 
 data HaskemonModel = HaskemonModel
     { name :: String
@@ -25,7 +26,7 @@ data HaskemonModel = HaskemonModel
     , element :: Element
     , stats :: HaskemonStats
     , ownerUsername :: String
-    } deriving (Show, Generic)
+    } deriving (Show, Eq, Generic)
 
 type HP = Int
 type Mana = Int
@@ -57,10 +58,22 @@ instance FromJSON Element where
     parseJSON "Air"   = return Air
     parseJSON _       = fail "Unknown Element"
 
+instance Val Element where
+    val Fire = String "Fire"
+    val Water = String "Water"
+    val Earth = String "Earth"
+    val Air = String "Air"
+
+    cast' (String "Fire") = Just Fire
+    cast' (String "Water") = Just Water
+    cast' (String "Earth") = Just Earth
+    cast' (String "Air") = Just Air
+    cast' _ = Nothing
+
 data HaskemonStats = HaskemonStats
     { attack :: Int
     , defense :: Int
-    } deriving (Show, Generic)
+    } deriving (Show, Eq, Generic)
 
 instance ToJSON HaskemonStats where
     toJSON (HaskemonStats attack defense) = object
@@ -73,6 +86,18 @@ instance FromJSON HaskemonStats where
         attack <- v .: "attack"
         defense <- v .: "defense"
         return $ HaskemonStats attack defense
+
+instance Val HaskemonStats where
+    val stats = Doc 
+        [ "attack" =: attack stats
+        , "defense" =: defense stats
+        ]
+
+    cast' (Doc doc) = do
+        atk <- Data.Bson.lookup "attack" doc
+        def <- Data.Bson.lookup "defense" doc
+        Just $ HaskemonStats atk def
+    cast' _ = Nothing
 
 instance ToJSON HaskemonModel where
     toJSON (HaskemonModel name healthPoint mana element stats ownerUsername) = object
@@ -93,6 +118,24 @@ instance FromJSON HaskemonModel where
         stats <- v .: "stats"
         ownerUsername <- v .: "ownerUsername"
         return $ HaskemonModel name healthPoint mana element stats ownerUsername
+
+instance Val HaskemonModel where
+    val haskemon = Doc
+        [ "healthPoint" =: healthPoint haskemon
+        , "mana" =: mana haskemon
+        , "element" =: val (element haskemon)
+        , "stats" =: val (stats haskemon)
+        ]
+
+    cast' (Doc doc) = do
+        name <- Data.Bson.lookup "name" doc
+        hp <- Data.Bson.lookup "healthPoint" doc
+        mn <- Data.Bson.lookup "mana" doc
+        elem <- Data.Bson.lookup "element" doc 
+        sts <- Data.Bson.lookup "stats" doc
+        owner <- Data.Bson.lookup "ownerUsername" doc
+        Just $ HaskemonModel name hp mn elem sts owner
+    cast' _ = Nothing
 
 parseElement :: String -> Maybe Element
 parseElement "Fire"  = Just Fire
