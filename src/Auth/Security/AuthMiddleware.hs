@@ -16,26 +16,28 @@ import qualified Data.Text as T
 
 authMiddleware :: ActionM () -> ActionM ()
 authMiddleware next = do
-    authHeader <- header "Authorization"
-    case authHeader of
-        Nothing -> unauthorizedResponse
-        Just token -> do
-            let tokenText = toStrict token
-                cleanToken = T.stripPrefix "Bearer " tokenText
-            case cleanToken of
-                Nothing -> unauthorizedResponse
-                Just t -> do
-                    verified <- liftIO $ verifyToken t
-                    case verified of
-                        Nothing -> unauthorizedResponse
-                        Just jwt -> do
-                            -- Refresh token if necessary
-                            refreshedToken <- liftIO $ refreshToken t
-                            case refreshedToken of
-                                Nothing -> unauthorizedResponse
-                                Just newToken -> do
-                                    setHeader "X-Refreshed-Token" (fromStrict newToken) -- Add new token to the response
-                                    next
+    header "Authorization" >>= maybe unauthorizedResponse handleToken
+  where
+    handleToken token = do
+        let tokenText = toStrict token
+        maybe unauthorizedResponse verifyTokenWrapper (T.stripPrefix "Bearer " tokenText)
+
+    verifyTokenWrapper t = do
+        liftIO (verifyToken t) >>= maybe unauthorizedResponse (handleJWT t)
+
+    handleJWT t jwt = do
+        let username = extractUsername jwt
+        maybe unauthorizedResponse (refreshAndContinue t) username
+
+    refreshAndContinue t usr = do
+        liftIO (refreshToken t) >>= maybe unauthorizedResponse (proceed usr)
+
+    proceed usr newToken = do
+        setHeader "X-Refreshed-Token" (fromStrict newToken)
+        next (T.unpack usr)
+
+extractUsername :: Web.JWT.JWT Web.JWT.VerifiedJWT -> Maybe T.Text
+extractUsername jwt = fmap (T.pack . show) (iss (claims jwt))
 
 unauthorizedResponse :: ActionM ()
 unauthorizedResponse = do
