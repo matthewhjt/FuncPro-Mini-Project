@@ -3,7 +3,7 @@
 
 module Main (main) where
 
-import Web.Scotty (get, put, post, scotty, json, jsonData, formParam, param, ScottyM, ActionM, rescue, middleware)
+import Web.Scotty (get, put, post, scotty, json, jsonData, formParam, param, ScottyM, ActionM, rescue, middleware, catch)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text.Lazy (Text, toStrict)
 import qualified Data.Map as Map

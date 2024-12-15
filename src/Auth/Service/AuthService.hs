@@ -9,12 +9,13 @@ import Auth.Repository.UserRepository (isUsernameTaken, addUser, getUser)
 import Auth.Model.UserModel (User(..))
 import Auth.Security.JWTUtils (createToken)
 
+import Network.HTTP.Types (status409, status201)
 import Crypto.BCrypt (hashPasswordUsingPolicy, slowerBcryptHashingPolicy, validatePassword)
 import Data.Aeson (object, (.=))
 import Data.Text (Text, unpack, pack)
 import Data.Maybe (fromMaybe)
 import Data.Text.Encoding (encodeUtf8, decodeUtf8)
-import Web.Scotty (json, ActionM)
+import Web.Scotty (json, ActionM, status)
 import Control.Monad.IO.Class (liftIO)
 import Lib (ApiResponse(..))
 
@@ -31,16 +32,19 @@ registerUser inputUsername inputPassword = do
     let uname = unpack inputUsername
     usernameExists <- liftIO $ isUsernameTaken uname
     if usernameExists
-        then json (ApiResponse
-            { code = 409
-            , success = False
-            , message = "Username is already taken."
-            , dataFields = Map.empty
-            })
+        then do
+            status status409
+            json (ApiResponse
+                { code = 409
+                , success = False
+                , message = "Username is already taken."
+                , dataFields = Map.empty
+                })
         else do
             hashedPwd <- liftIO $ hashPassword inputPassword
             let newUser = User uname (unpack hashedPwd)
-            _ <- liftIO $ addUser newUser
+            liftIO $ addUser newUser
+            status status201
             json (ApiResponse
                 { code = 201
                 , success = True

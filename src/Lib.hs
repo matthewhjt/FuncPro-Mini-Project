@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Lib (runDB, ApiResponse(..), successResponse, errorResponse, notFoundResponse, safeCreateObjectId, corsMiddleware) where
 
-import Database.MongoDB (connect, host, access, master, Action, auth)
+import Database.MongoDB (connect, host, access, master, Action, auth, readHostPort)
 import Data.Aeson (object, Key, Value, KeyValue((.=)), ToJSON(toJSON))
 import GHC.Generics (Generic)
 import Data.Map (Map)
@@ -14,6 +14,30 @@ import Data.Char (isHexDigit)
 import Control.Monad ( guard )
 import Network.Wai.Middleware.Cors
 import Network.Wai (Middleware)
+import System.Environment (lookupEnv)
+import Control.Monad.IO.Class (liftIO)
+import Data.Text (Text, pack, unpack)
+import Control.Exception (throwIO)
+
+getDbCredentials :: IO (String, Text, Text)
+getDbCredentials = do
+    maybeUrl <- lookupEnv "DB_URL"
+    maybeUname <- lookupEnv "DB_USERNAME"
+    maybePwd <- lookupEnv "DB_PASSWORD"
+    
+    case (maybeUrl, maybeUname, maybePwd) of
+        (Just url, Just uname, Just pwd) -> 
+            return (url, pack uname, pack pwd)
+        _ -> throwIO $ userError "Environment variables DB_URL, DB_USERNAME, or DB_PASSWORD are not set."
+
+-- runDB :: Action IO a -> IO a
+-- runDB act = do
+--     (url, uname, pwd) <- getDbCredentials
+--     let hostname = readHostPort url
+--     pipe <- connect hostname
+--     e <- access pipe master "admin" $ auth uname pwd
+--     liftIO $ print e
+--     access pipe master "local" act
 
 runDB :: Action IO a -> IO a
 runDB act = do
