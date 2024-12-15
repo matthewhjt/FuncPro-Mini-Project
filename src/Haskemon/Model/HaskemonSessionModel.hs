@@ -5,7 +5,6 @@ module Haskemon.Model.HaskemonSessionModel
     , toJSON
     , fromJSON
     , PlayHaskemonRequest(..)
-    , PlayHaskemonRequest
     ) where
 
 import GHC.Generics (Generic)

@@ -1,8 +1,9 @@
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
 module Haskemon.Service.HaskemonService
     ( createHaskemonForUser, createGameSession, findHaskemonSession, playHaskemon
     ) where
 
-import Web.Scotty ( json, pathParam, ActionM, jsonData )
+import Web.Scotty ( json, pathParam, ActionM, jsonData, status )
 import Haskemon.Model.HaskemonModel
 import Haskemon.Model.HaskemonSessionModel
 import Haskemon.Repository.HaskemonRepository (saveHaskemon, getHaskemonsByIds)
@@ -15,6 +16,7 @@ import Lib (ApiResponse(..), safeCreateObjectId, errorResponse, successResponse)
 import qualified Data.Map as Map
 import Data.Maybe
 import System.Random (randomRIO)
+import Network.HTTP.Types.Status (badRequest400, notFound404)
 
 handleMoveOutcome :: Value -> [HaskemonModel] -> [HaskemonModel] -> Int -> Int -> ActionM ()
 handleMoveOutcome sessionId team1 team2 newWinner currentHaskemon = do
@@ -67,129 +69,106 @@ playHaskemon = do
 
     case gameSession of
         Nothing -> do
+            status notFound404
             json notFoundResponse
 
         Just (HaskemonSession sessionId team1 team2 winner currentHaskemon) -> do
             if winner /= 0
             then do
+                status badRequest400
                 json badRequest
             else do
                 req <- jsonData :: ActionM PlayHaskemonRequest
                 let (moveType, target) = move req
-                case moveType of
+                    curHaskemon = team1 !! currentHaskemon
+                    targetHaskemon = team2 !! target
+                if healthPoint curHaskemon <= 0 || healthPoint targetHaskemon <= 0
+                then json $ errorResponse 400 "Invalid move: target is dead" Map.empty
+                else case moveType of
                     1 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        let targetHaskemon = team2 !! target
-                        if healthPoint curHaskemon <= 0 || healthPoint targetHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
-                        else do
-                            let updatedTargetHaskemon = applySinglePhysicalAttack curHaskemon targetHaskemon
-                            let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
-                            let newWinner = getWinner team1 updatedTeam2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                        let updatedTargetHaskemon = applySinglePhysicalAttack curHaskemon targetHaskemon
+                            updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
+                            newWinner = getWinner team1 updatedTeam2
+                        handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     2 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        let targetHaskemon = team2 !! target
-                        if healthPoint curHaskemon <= 0 || mana curHaskemon < 15 || healthPoint targetHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
+                        if mana curHaskemon < 15
+                        then json $ errorResponse 400 "Invalid move: not enough mana" Map.empty
                         else do
                             let updatedCurHaskemon = updateMana (subtract 15) curHaskemon
-                            let updatedTargetHaskemon = applyMagicAttack curHaskemon targetHaskemon
-                            let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
-                            let newWinner = getWinner team1 updatedTeam2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                                updatedTargetHaskemon = applyMagicAttack curHaskemon targetHaskemon
+                                updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                                updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
+                                newWinner = getWinner updatedTeam1 updatedTeam2
+                            handleMoveOutcome sessionId updatedTeam1 updatedTeam2 newWinner currentHaskemon
                     3 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        let targetHaskemon = team2 !! target
-                        if healthPoint curHaskemon <= 0 || mana curHaskemon < 15 || healthPoint targetHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
+                        if mana curHaskemon < 15
+                        then json $ errorResponse 400 "Invalid move: not enough mana" Map.empty
                         else do
                             let updatedCurHaskemon = updateMana (subtract 15) curHaskemon
-                            let updatedTargetHaskemon = applyMagicAttack curHaskemon targetHaskemon
-                            let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
-                            let newWinner = getWinner team1 updatedTeam2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                                updatedTargetHaskemon = applyMagicAttack curHaskemon targetHaskemon
+                                updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                                updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
+                                newWinner = getWinner updatedTeam1 updatedTeam2
+                            handleMoveOutcome sessionId updatedTeam1 updatedTeam2 newWinner currentHaskemon
                     4 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        let targetHaskemon = team1 !! target
-                        if healthPoint curHaskemon <= 0 || mana curHaskemon < 5 || healthPoint targetHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
+                        if mana curHaskemon < 5
+                        then json $ errorResponse 400 "Invalid move: not enough mana" Map.empty
                         else do
                             let updatedCurHaskemon = updateMana (subtract 5) curHaskemon
-                            let updatedTargetHaskemon = applySingleBuff targetHaskemon
-                            let updateTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let updatedTeam1 = updateTeam updateTeam1 target updatedTargetHaskemon
-                            let newWinner = getWinner updatedTeam1 team2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                                updatedTargetHaskemon = applySingleBuff targetHaskemon
+                                updateTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                                updatedTeam1 = updateTeam updateTeam1 target updatedTargetHaskemon
+                                newWinner = getWinner updatedTeam1 team2
+                            handleMoveOutcome sessionId updatedTeam1 team2 newWinner currentHaskemon
                     5 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        if healthPoint curHaskemon <= 0 || mana curHaskemon < 5
-                        then json $ errorResponse 400 "Invalid move" Map.empty
+                        if mana curHaskemon < 5
+                        then json $ errorResponse 400 "Invalid move: not enough mana" Map.empty
                         else do
                             let updatedCurHaskemon = updateMana (subtract 5) curHaskemon
-                            let updateTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let updatedTeam1 = applyMultipleBuff updateTeam1
-                            let newWinner = getWinner updatedTeam1 team2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                                updateTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                                updatedTeam1 = applyMultipleBuff updateTeam1
+                                newWinner = getWinner updatedTeam1 team2
+                            handleMoveOutcome sessionId updatedTeam1 team2 newWinner currentHaskemon
                     6 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        let targetHaskemon = team2 !! target
-                        if healthPoint curHaskemon <= 0 || mana curHaskemon < 5 || healthPoint targetHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
+                        if mana curHaskemon < 5
+                        then json $ errorResponse 400 "Invalid move: not enough mana" Map.empty
                         else do
                             let updatedCurHaskemon = updateMana (subtract 5) curHaskemon
-                            let updatedTargetHaskemon = applySingleDebuff targetHaskemon
-                            let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
-                            let newWinner = getWinner updatedTeam1 updatedTeam2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                                updatedTargetHaskemon = applySingleDebuff targetHaskemon
+                                updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                                updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
+                                newWinner = getWinner updatedTeam1 updatedTeam2
+                            handleMoveOutcome sessionId updatedTeam1 updatedTeam2 newWinner currentHaskemon
                     7 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        if healthPoint curHaskemon <= 0 || mana curHaskemon < 5
-                        then json $ errorResponse 400 "Invalid move" Map.empty
+                        if mana curHaskemon < 5
+                        then json $ errorResponse 400 "Invalid move: not enough mana" Map.empty
                         else do
                             let updatedCurHaskemon = updateMana (subtract 5) curHaskemon
-                            let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let updatedTeam2 = applyMultipleDebuff team2
-                            let newWinner = getWinner updatedTeam1 updatedTeam2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                                updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                                updatedTeam2 = applyMultipleDebuff team2
+                                newWinner = getWinner updatedTeam1 updatedTeam2
+                            handleMoveOutcome sessionId updatedTeam1 updatedTeam2 newWinner currentHaskemon
                     8 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        if healthPoint curHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
-                        else do
-                            let updatedCurHaskemon = updateHp (+15) curHaskemon
-                            let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let newWinner = getWinner updatedTeam1 team2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                        let updatedCurHaskemon = updateHp (+15) curHaskemon
+                            updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                            newWinner = getWinner updatedTeam1 team2
+                        handleMoveOutcome sessionId updatedTeam1 team2 newWinner currentHaskemon
                     9 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        if healthPoint curHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
-                        else do
-                            let updatedTeam1 = updateTeamHp (+5) team1
-                            let newWinner = getWinner updatedTeam1 team2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                        let updatedTeam1 = updateTeamHp (+5) team1
+                            newWinner = getWinner updatedTeam1 team2
+                        handleMoveOutcome sessionId updatedTeam1 team2 newWinner currentHaskemon
                     10 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        if healthPoint curHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
-                        else do
-                            let updatedCurHaskemon = updateMana (+15) curHaskemon
-                            let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
-                            let newWinner = getWinner updatedTeam1 team2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
+                        let updatedCurHaskemon = updateMana (+15) curHaskemon
+                            updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
+                            newWinner = getWinner updatedTeam1 team2
+                        handleMoveOutcome sessionId updatedTeam1 team2 newWinner currentHaskemon
                     11 -> do
-                        let curHaskemon = team1 !! currentHaskemon
-                        if healthPoint curHaskemon <= 0
-                        then json $ errorResponse 400 "Invalid move" Map.empty
-                        else do
-                            let updatedTeam1 = updateTeamMana (+5) team1
-                            let newWinner = getWinner updatedTeam1 team2
-                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
-                    _ -> json badRequest
+                        let updatedTeam1 = updateTeamMana (+5) team1
+                            newWinner = getWinner updatedTeam1 team2
+                        handleMoveOutcome sessionId updatedTeam1 team2 newWinner currentHaskemon
+                    _ -> do
+                        status badRequest400
+                        json badRequest
 
 systemMoves :: [HaskemonModel] -> [HaskemonModel] -> Value -> [HaskemonSession]
 systemMoves team enemy sessionId = do
@@ -199,86 +178,48 @@ systemMoves team enemy sessionId = do
         updatedTeam = updateTeam team fstTargetTeam updatedTargetHaskemon
         newWinner = getWinner updatedTeam enemy
         sndAttEnemy = findFirstAliveHaskemon enemy (fstAttEnemy + 1)
-
-    case (newWinner, sndAttEnemy) of
-        (2, _) -> [HaskemonSession
-                    { sessionId = sessionId
-                    , team1 = updatedTeam
-                    , team2 = enemy
-                    , winner = newWinner
-                    , currentHaskemon = -1
-                    }]
-        (_, -1) -> [HaskemonSession
+        fstSysMove = HaskemonSession
                     { sessionId = sessionId
                     , team1 = updatedTeam
                     , team2 = enemy
                     , winner = newWinner
                     , currentHaskemon = findFirstAliveHaskemon updatedTeam 0
-                    }]
+                    }
+
+    case (newWinner, sndAttEnemy) of
+        (2, _) -> [fstSysMove]
+        (_, -1) -> [fstSysMove]
         (_, _) -> do
             let sndTargetTeam = findFirstAliveHaskemon updatedTeam 0
                 updatedTargetHaskemon2 = applySinglePhysicalAttack (enemy !! sndAttEnemy) (team !! sndTargetTeam)
                 updatedTeam2 = updateTeam updatedTeam sndTargetTeam updatedTargetHaskemon2
                 newWinner2 = getWinner updatedTeam2 enemy
                 thdAttEnemy = findFirstAliveHaskemon enemy (sndAttEnemy + 1)
-
-            case (newWinner2, thdAttEnemy) of
-                (2, _) -> [HaskemonSession
-                            { sessionId = sessionId
-                            , team1 = updatedTeam
-                            , team2 = enemy
-                            , winner = newWinner
-                            , currentHaskemon = findFirstAliveHaskemon updatedTeam 0
-                            }, 
-                            HaskemonSession
-                            { sessionId = sessionId
-                            , team1 = updatedTeam2
-                            , team2 = enemy
-                            , winner = newWinner2
-                            , currentHaskemon = -1
-                            }]
-                (_, -1) -> [HaskemonSession
-                            { sessionId = sessionId
-                            , team1 = updatedTeam
-                            , team2 = enemy
-                            , winner = newWinner
-                            , currentHaskemon = findFirstAliveHaskemon updatedTeam 0
-                            }, 
-                            HaskemonSession
+                sndSysMove = HaskemonSession
                             { sessionId = sessionId
                             , team1 = updatedTeam2
                             , team2 = enemy
                             , winner = newWinner2
                             , currentHaskemon = findFirstAliveHaskemon updatedTeam2 0
-                            }]
-                (_, _) -> 
+                            }
+
+            case (newWinner2, thdAttEnemy) of
+                (2, _) -> [fstSysMove, sndSysMove]
+                (_, -1) -> [fstSysMove, sndSysMove]
+                (_, _) ->
                     let thdTargetTeam = findFirstAliveHaskemon updatedTeam2 0
                         updatedTargetHaskemon3 = applySinglePhysicalAttack (enemy !! thdAttEnemy) (team !! thdTargetTeam)
                         updatedTeam3 = updateTeam updatedTeam2 thdTargetTeam updatedTargetHaskemon3
                         newWinner3 = getWinner updatedTeam3 enemy
-                    
-                    in  [ HaskemonSession
-                            { sessionId = sessionId
-                            , team1 = updatedTeam
-                            , team2 = enemy
-                            , winner = newWinner
-                            , currentHaskemon = findFirstAliveHaskemon updatedTeam 0
-                            }, 
-                          HaskemonSession
-                            { sessionId = sessionId
-                            , team1 = updatedTeam2
-                            , team2 = enemy
-                            , winner = newWinner2
-                            , currentHaskemon = findFirstAliveHaskemon updatedTeam2 0
-                            },
-                          HaskemonSession
-                            { sessionId = sessionId
-                            , team1 = updatedTeam3
-                            , team2 = enemy
-                            , winner = newWinner3
-                            , currentHaskemon = findFirstAliveHaskemon updatedTeam3 0
-                            }
-                        ]
+                        thdSysMove = HaskemonSession
+                                    { sessionId = sessionId
+                                    , team1 = updatedTeam3
+                                    , team2 = enemy
+                                    , winner = newWinner3
+                                    , currentHaskemon = findFirstAliveHaskemon updatedTeam3 0
+                                    }
+
+                    in  [fstSysMove, sndSysMove, thdSysMove]
 
 findFirstAliveHaskemon :: [HaskemonModel] -> Int -> Int
 findFirstAliveHaskemon team startIdx
@@ -288,8 +229,8 @@ findFirstAliveHaskemon team startIdx
 
 getWinner :: [HaskemonModel] -> [HaskemonModel] -> Int
 getWinner team1 team2
-    | all (\h -> healthPoint h <= 0) team1 = 2  
-    | all (\h -> healthPoint h <= 0) team2 = 1 
+    | all (\h -> healthPoint h <= 0) team1 = 2
+    | all (\h -> healthPoint h <= 0) team2 = 1
     | otherwise = 0
 
 updateTeam :: [HaskemonModel] -> Int -> HaskemonModel -> [HaskemonModel]
@@ -320,25 +261,17 @@ createGameSession username teamIds  = do
     let haskemon3 = HaskemonModel { name = "Bandit3", healthPoint = 100, mana = 100, element = elem3, stats = stats, ownerUsername = "adm1n"}
 
     let team2Haskemons = [haskemon1, haskemon2, haskemon3]
-     
+
     gameSessionId <- liftIO $ createHaskemonSession team1Haskemons team2Haskemons
     let newSession = HaskemonSession
-            { sessionId = gameSessionId 
+            { sessionId = gameSessionId
             , team1 = team1Haskemons
             , team2 = team2Haskemons
             , winner = 0
             , currentHaskemon = 0
             }
 
-    let response = ApiResponse
-            { code = 200
-            , success = True
-            , message = "Move saved successfully."
-            , dataFields = Map.fromList
-                [
-                    ("gameSession", toJSON newSession)
-                ]
-            }
+        response = successResponse 200 "Haskemon Session created." (Map.fromList [("gameSession", toJSON newSession)])
     return response
 
 findHaskemonSession :: ActionM()
@@ -379,18 +312,8 @@ createHaskemonForUser username name hp mana atk def elementStr = do
                     let haskemon = HaskemonModel name hp mana element validStats username
                     result <- saveHaskemon haskemon
                     case result of
-                        Left err -> return ApiResponse
-                            { code = 500
-                            , success = False
-                            , message = "Failed to save Haskemon: " ++ err
-                            , dataFields = Map.empty
-                            }
-                        Right objectId -> return ApiResponse
-                            { code = 200
-                            , success = True
-                            , message = "Haskemon created successfully."
-                            , dataFields = Map.fromList [("haskemonKey", toJSON $ show objectId)]
-                            }
+                        Left err -> return $ errorResponse 500 ("Failed to save Haskemon: " ++ err) Map.empty
+                        Right objectId -> return $ successResponse 200 "Haskemon created successfully." (Map.fromList [("haskemonKey", toJSON $ show objectId)])
 
 physicalAttack :: Int -> Int -> Int
 physicalAttack attack defense = max (attack - defense) 0
@@ -432,19 +355,19 @@ applyAreaMagicAttack attacker team = map (applyAreaAttack attacker) team
     applyAreaAttack attacker target = target { healthPoint = healthPoint target - areaAttack (attack (stats attacker)) (length team) }
 
 applySingleBuff :: HaskemonModel -> HaskemonModel
-applySingleBuff target = target {stats = singleBuff (stats target)} 
+applySingleBuff target = target {stats = singleBuff (stats target)}
 
 applyMultipleBuff :: [HaskemonModel] -> [HaskemonModel]
-applyMultipleBuff team = map applyAreaBuff team
+applyMultipleBuff = map applyAreaBuff
   where
     applyAreaBuff :: HaskemonModel -> HaskemonModel
     applyAreaBuff target = target {stats = areaBuff (stats target)}
 
 applySingleDebuff :: HaskemonModel -> HaskemonModel
-applySingleDebuff target = target {stats = singleDebuff (stats target)} 
+applySingleDebuff target = target {stats = singleDebuff (stats target)}
 
 applyMultipleDebuff :: [HaskemonModel] -> [HaskemonModel]
-applyMultipleDebuff team = map applyAreaDebuff team
+applyMultipleDebuff = map applyAreaDebuff
   where
     applyAreaDebuff :: HaskemonModel -> HaskemonModel
     applyAreaDebuff target = target {stats = areaDebuff (stats target)}
