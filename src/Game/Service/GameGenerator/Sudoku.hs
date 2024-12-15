@@ -1,12 +1,17 @@
-module Game.Service.GameGenerator
-    ( generateEasySudoku, generateMediumSudoku, generateHardSudoku
+{-# OPTIONS_GHC -Wno-name-shadowing #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
+module Game.Service.GameGenerator.Sudoku
+    ( generateEasySudoku
+    , generateMediumSudoku
+    , generateHardSudoku
+    , isBoardFilled
+    , safeReplace2D
     ) where
 
 import System.Random (randomRIO)
-import Data.List (delete)
-import Control.Monad (forM_, foldM)
+import Control.Monad (foldM)
 import Data.Maybe (isJust)
-import Game.Service.GameValidator (isValidSudokuBoard, Board)
+import Game.Service.GameValidator.GameValidator (isValidSudokuBoard, Board)
 
 emptyBoard :: Board
 emptyBoard = replicate 9 (replicate 9 0)
@@ -23,8 +28,11 @@ generateHardSudoku = generateSudoku 60
 generateSudoku :: Int -> IO Board
 generateSudoku numHoles = do
   board <- fillDiagonal emptyBoard
-  let fullBoard = fillRemaining board 0 3
-  removeNumbers fullBoard numHoles
+  case fillRemaining board 0 3 of
+    (Just fullBoard, True) -> do
+      removeNumbers fullBoard numHoles
+    _ -> do
+      generateSudoku numHoles
 
 fillDiagonal :: Board -> IO Board
 fillDiagonal board = foldM (\b i -> fillBox b i i) board [0, 3, 6]
@@ -48,27 +56,26 @@ shuffle xs = do
   i <- randomRIO (0, length xs - 1)
   let (front, x:back) = splitAt i xs
   fmap (x :) (shuffle (front ++ back))
-
-fillRemaining :: Board -> Int -> Int -> Board
+ 
+fillRemaining :: Board -> Int -> Int -> (Maybe Board, Bool)
 fillRemaining board i j
-  | i >= 9 = board
-  | j >= 9 = fillRemaining board (i + 1) 0
-  | board !! i !! j /= 0 = fillRemaining board i (j + 1)
-  | otherwise = tryNums board i j [1..9]
+  | i == 8 && j == 9 = (Just board, True)
+  | j == 9 = fillRemaining board (i + 1) 0
+  | (board !! i) !! j /= 0 = fillRemaining board i (j + 1)
+  | otherwise = tryNums board i j 1
   where
-    tryNums :: Board -> Int -> Int -> [Int] -> Board
-    tryNums b _ _ [] = b
-    tryNums b x y (n:ns)
-      | isSafe b x y n =
-          let newBoard = replace2D x y n b
-          in if isBoardFilled newBoard
-             then newBoard
-             else fillRemaining newBoard x (y + 1)
-      | otherwise = tryNums b x y ns
-
-
+    tryNums :: Board -> Int -> Int -> Int -> (Maybe Board, Bool)
+    tryNums board i j num
+      | num > 9 = (Nothing, False)
+      | isSafe board i j num = 
+          let newBoard = replace2D i j num board
+           in case fillRemaining newBoard i (j + 1) of
+                (Just _, True) -> fillRemaining newBoard i (j+1)
+                _ -> tryNums board i j (num + 1)
+      | otherwise = tryNums board i j (num + 1)
+    
 isBoardFilled :: Board -> Bool
-isBoardFilled = all (all (/= 0))
+isBoardFilled = all (notElem 0)
 
 isSafe :: Board -> Int -> Int -> Int -> Bool
 isSafe board row col num = isJust $ isValidSudokuBoard $ Just $ replace2D row col num board
@@ -93,3 +100,13 @@ replace2D row col newVal board =
   take row board ++
   [take col (board !! row) ++ [newVal] ++ drop (col + 1) (board !! row)] ++
   drop (row + 1) board
+
+safeReplace2D :: Int -> Int -> Int -> Board -> Maybe Board
+safeReplace2D row col newVal board
+  | row < 0 || row >= length board = Nothing
+  | col < 0 || col >= length (board !! row) = Nothing
+  | (board !! row) !! col == newVal = Nothing
+  | otherwise = Just $
+      take row board ++
+      [take col (board !! row) ++ [newVal] ++ drop (col + 1) (board !! row)] ++
+      drop (row + 1) board

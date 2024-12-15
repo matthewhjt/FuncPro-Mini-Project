@@ -7,14 +7,13 @@ module Auth.Security.AuthMiddleware (
 import Web.Scotty (ActionM, header, json, status, setHeader)
 import Network.HTTP.Types.Status (unauthorized401)
 import Auth.Security.JWTUtils (verifyToken, refreshToken)
-import Data.Text.Lazy (toStrict)
+import Data.Text.Lazy (toStrict, fromStrict)
 import qualified Data.Text as T
 import Data.Aeson (object, (.=))
 import Control.Monad.IO.Class (liftIO)
-import Data.Text.Lazy (fromStrict)
-import qualified Data.Text as T
+import Web.JWT (claims, iss, VerifiedJWT, JWT)
 
-authMiddleware :: ActionM () -> ActionM ()
+authMiddleware :: (String -> ActionM ()) -> ActionM ()
 authMiddleware next = do
     header "Authorization" >>= maybe unauthorizedResponse handleToken
   where

@@ -1,4 +1,4 @@
-module Game.Service.GameValidator 
+module Game.Service.GameValidator.GameValidator
     (
         isValidSudokuBoard,
         hasWinnerConnect4Board,

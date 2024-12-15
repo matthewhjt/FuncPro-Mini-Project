@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
-module Lib (runDB, ApiResponse(..), safeCreateObjectId) where
+module Lib (runDB, ApiResponse(..), successResponse, errorResponse, notFoundResponse, safeCreateObjectId, corsMiddleware) where
 
 import Database.MongoDB (connect, host, access, master, Action, auth, readHostPort)
 import Data.Aeson (object, Key, Value, KeyValue((.=)), ToJSON(toJSON))
@@ -51,9 +51,18 @@ data ApiResponse = ApiResponse
     , dataFields :: Map Key Value
     } deriving (Show, Generic)
 
+successResponse :: Int -> String -> Map Key Value -> ApiResponse
+successResponse c = ApiResponse c True
+
+errorResponse :: Int -> String -> Map Key Value -> ApiResponse
+errorResponse c = ApiResponse c False
+
+notFoundResponse :: String -> Map Key Value -> ApiResponse
+notFoundResponse = ApiResponse 404 False
+
 instance ToJSON ApiResponse where
-    toJSON (ApiResponse code success message dataFields) = 
-        object $ 
+    toJSON (ApiResponse code success message dataFields) =
+        object $
             [ "code" .= code
             , "success" .= success
             , "message" .= message
@@ -63,25 +72,39 @@ safeCreateObjectId :: String -> Maybe ObjectId
 safeCreateObjectId hexStr = do
     guard (length hexStr == 24)
     guard (all isHexDigit hexStr)
-    
+
     let (timeHex, machineHex) = splitAt 8 hexStr
     time <- parseWord32 timeHex
     machine <- parseWord64 machineHex
-    
+
     return $ Oid time machine
   where
-    parseWord32 hex = 
+    parseWord32 hex =
         case readHex hex of
-            [(value, "")] -> 
-                if value <= maxBound 
-                then Just value 
+            [(value, "")] ->
+                if value <= maxBound
+                then Just value
                 else Nothing
             _ -> Nothing
-    
-    parseWord64 hex = 
+    parseWord64 hex =
         case readHex hex of
-            [(value, "")] -> 
-                if value <= maxBound 
-                then Just value 
+            [(value, "")] ->
+                if value <= maxBound
+                then Just value
                 else Nothing
             _ -> Nothing
+
+corsMiddleware :: Middleware
+corsMiddleware = cors $ const $ Just corsResourcePolicy
+
+corsResourcePolicy :: CorsResourcePolicy
+corsResourcePolicy = simpleCorsResourcePolicy
+    { corsOrigins = Just (["http://localhost:5173"], True)  -- Vite dev server
+    , corsMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    , corsRequestHeaders = ["Content-Type", "Authorization"]
+    , corsExposedHeaders = Nothing
+    , corsMaxAge = Nothing
+    , corsVaryOrigin = True
+    , corsRequireOrigin = False
+    , corsIgnoreFailures = True
+    }

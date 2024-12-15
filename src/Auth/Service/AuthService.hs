@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Auth.Service.AuthService where
+module Auth.Service.AuthService
+    ( registerUser
+    , login
+    ) where
 
 import Auth.Repository.UserRepository (isUsernameTaken, addUser, getUser)
 import Auth.Model.UserModel (User(..))
@@ -19,8 +22,8 @@ import Lib (ApiResponse(..))
 import qualified Data.Map as Map
 
 hashPassword :: Text -> IO Text
-hashPassword password = do
-    let passwordBytes = encodeUtf8 password
+hashPassword pw = do
+    let passwordBytes = encodeUtf8 pw
     hashed <- hashPasswordUsingPolicy slowerBcryptHashingPolicy passwordBytes
     return $ decodeUtf8 $ fromMaybe "" hashed
 

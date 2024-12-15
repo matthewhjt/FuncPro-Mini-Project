@@ -1,12 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main (main) where
 
 import Web.Scotty (get, put, post, scotty, json, jsonData, formParam, param, ScottyM, ActionM, rescue, middleware, catch)
 import Control.Monad.IO.Class (liftIO)
 import Data.Text.Lazy (Text, toStrict)
+import qualified Data.Map as Map
+import qualified Data.Text as T
+import qualified Database.MongoDB as Mongo
 import Game.Service.GameService (getAllGames)
-import GameSession.Service.GameSessionService (createNewEasySudokuSession, findGameSession, playGame)
+import GameSession.Service.GameSessionService 
+    ( createSudokuSession
+    , findGameSession
+    , playSudoku
+    )
 import Auth.Service.AuthService (registerUser, login)
 import Auth.Security.AuthMiddleware (authMiddleware)
 import Haskemon.Service.HaskemonService (createHaskemonForUser, createGameSession, findHaskemonSession, playHaskemon)
@@ -43,9 +51,11 @@ createHaskemonSessionEndpoint = post "/gameSession" $ authMiddleware $ \username
 funpro :: ScottyM()
 funpro = do
     get "/games" getAllGames
-    get "/gameSession/newGame/sudoku/easy" $ authMiddleware createNewEasySudokuSession
-    get "/gameSession/:gameSessionId" findGameSession
-    put "/gameSession/:gameSessionId" playGame
+    get "/gameSession/newGame/sudoku/:difficulty" $ authMiddleware $ \_ -> createSudokuSession
+    get "/gameSession/:gameSessionId" $ authMiddleware $ \_ -> findGameSession
+    put "/playGame/sudoku/:gameSessionId" $ authMiddleware $ \_ -> playSudoku
+    get "/haskemonSession/:haskemonSessionId" findHaskemonSession
+    put "/haskemonSession/:haskemonSessionId" playHaskemon
     
     post "/register" $ do
         uname <- formParam "username" :: ActionM Text
@@ -57,6 +67,11 @@ funpro = do
         pwd <- formParam "password" :: ActionM Text
         login (toStrict uname) (toStrict pwd)
 
+    createHaskemonEndpoint
+    createHaskemonSessionEndpoint
+
 main :: IO ()
 main = do
-    scotty 3000 funpro
+    scotty 3001 (do
+        middleware corsMiddleware
+        funpro)
