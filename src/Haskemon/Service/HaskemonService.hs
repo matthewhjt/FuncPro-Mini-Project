@@ -16,6 +16,35 @@ import qualified Data.Map as Map
 import Data.Maybe
 import System.Random (randomRIO)
 
+handleMoveOutcome :: Value -> [HaskemonModel] -> [HaskemonModel] -> Int -> Int -> ActionM ()
+handleMoveOutcome sessionId team1 team2 newWinner currentHaskemon = do
+    case (newWinner, currentHaskemon) of
+        (0, 2) -> do
+            let sysMoves = systemMoves team1 team2 sessionId
+            saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
+            let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
+            json response
+        (_, _) -> do
+            let responseMsg = case newWinner of
+                                1 -> "Game won"
+                                2 -> "Game lost"
+                                _ -> "Move saved successfully"
+            let updatedGameSession = HaskemonSession
+                    { sessionId = sessionId
+                    , team1 = team1
+                    , team2 = team2
+                    , winner = newWinner
+                    , currentHaskemon = (currentHaskemon + 1) `mod` length team1
+                    }
+            saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
+            let response = ApiResponse
+                    { code = 200
+                    , success = True
+                    , message = responseMsg
+                    , dataFields = Map.fromList [("gameSession", toJSON saveGameSession)]
+                    }
+            json response
+
 playHaskemon :: ActionM ()
 playHaskemon = do
     haskemonSessionId <- pathParam "haskemonSessionId" :: ActionM String
@@ -57,36 +86,7 @@ playHaskemon = do
                             let updatedTargetHaskemon = applySinglePhysicalAttack curHaskemon targetHaskemon
                             let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
                             let newWinner = getWinner team1 updatedTeam2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves team1 updatedTeam2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                        let responseMsg = 
-                                                case newWinner of
-                                                    1 -> "Game won"
-                                                    2 -> "Game lost"
-                                                    _ -> "Move saved successfully"
-                                        let updatedGameSession = HaskemonSession
-                                                { sessionId = sessionId
-                                                , team1 = team1
-                                                , team2 = updatedTeam2
-                                                , winner = newWinner
-                                                , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                                }
-                                        saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                        let response = ApiResponse
-                                                { code = 200
-                                                , success = True
-                                                , message = responseMsg
-                                                , dataFields = Map.fromList
-                                                    [
-                                                        ("gameSession", toJSON saveGameSession)
-                                                    ]
-                                                }
-                                        json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     2 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         let targetHaskemon = team2 !! target
@@ -98,36 +98,7 @@ playHaskemon = do
                             let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
                             let newWinner = getWinner team1 updatedTeam2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 updatedTeam2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = updatedTeam2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     3 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         let targetHaskemon = team2 !! target
@@ -139,36 +110,7 @@ playHaskemon = do
                             let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
                             let newWinner = getWinner team1 updatedTeam2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 updatedTeam2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = updatedTeam2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     4 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         let targetHaskemon = team1 !! target
@@ -180,36 +122,7 @@ playHaskemon = do
                             let updateTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let updatedTeam1 = updateTeam updateTeam1 target updatedTargetHaskemon
                             let newWinner = getWinner updatedTeam1 team2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 team2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = team2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     5 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         if healthPoint curHaskemon <= 0 || mana curHaskemon < 5
@@ -219,36 +132,7 @@ playHaskemon = do
                             let updateTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let updatedTeam1 = applyMultipleBuff updateTeam1
                             let newWinner = getWinner updatedTeam1 team2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 team2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = team2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     6 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         let targetHaskemon = team2 !! target
@@ -260,36 +144,7 @@ playHaskemon = do
                             let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let updatedTeam2 = updateTeam team2 target updatedTargetHaskemon
                             let newWinner = getWinner updatedTeam1 updatedTeam2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 updatedTeam2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = updatedTeam2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     7 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         if healthPoint curHaskemon <= 0 || mana curHaskemon < 5
@@ -299,36 +154,7 @@ playHaskemon = do
                             let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let updatedTeam2 = applyMultipleDebuff team2
                             let newWinner = getWinner updatedTeam1 updatedTeam2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 updatedTeam2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = updatedTeam2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     8 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         if healthPoint curHaskemon <= 0
@@ -337,36 +163,7 @@ playHaskemon = do
                             let updatedCurHaskemon = updateHp (+15) curHaskemon
                             let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let newWinner = getWinner updatedTeam1 team2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 team2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = team2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     9 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         if healthPoint curHaskemon <= 0
@@ -374,36 +171,7 @@ playHaskemon = do
                         else do
                             let updatedTeam1 = updateTeamHp (+5) team1
                             let newWinner = getWinner updatedTeam1 team2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 team2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = team2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     10 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         if healthPoint curHaskemon <= 0
@@ -412,36 +180,7 @@ playHaskemon = do
                             let updatedCurHaskemon = updateMana (+15) curHaskemon
                             let updatedTeam1 = updateTeam team1 currentHaskemon updatedCurHaskemon
                             let newWinner = getWinner updatedTeam1 team2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 team2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = team2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     11 -> do
                         let curHaskemon = team1 !! currentHaskemon
                         if healthPoint curHaskemon <= 0
@@ -449,36 +188,7 @@ playHaskemon = do
                         else do
                             let updatedTeam1 = updateTeamMana (+5) team1
                             let newWinner = getWinner updatedTeam1 team2
-                            case (newWinner, currentHaskemon) of
-                                (0, 2) -> do
-                                    let sysMoves = systemMoves updatedTeam1 team2 sessionId
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId $ last sysMoves
-                                    let response = successResponse 200 "Move saved successfully" (Map.fromList [("systemMoves", toJSON sysMoves)])
-                                    json response
-                                (_, _) -> do
-                                    let responseMsg = 
-                                            case newWinner of
-                                                1 -> "Game won"
-                                                2 -> "Game lost"
-                                                _ -> "Move saved successfully"
-                                    let updatedGameSession = HaskemonSession
-                                            { sessionId = sessionId
-                                            , team1 = updatedTeam1
-                                            , team2 = team2
-                                            , winner = newWinner
-                                            , currentHaskemon = (currentHaskemon + 1) `mod` length team1
-                                            }
-                                    saveGameSession <- liftIO $ updateHaskemonSession sessionId updatedGameSession
-                                    let response = ApiResponse
-                                            { code = 200
-                                            , success = True
-                                            , message = responseMsg
-                                            , dataFields = Map.fromList
-                                                [
-                                                    ("gameSession", toJSON saveGameSession)
-                                                ]
-                                            }
-                                    json response
+                            handleMoveOutcome sessionId team1 updatedTeam2 newWinner currentHaskemon
                     _ -> json badRequest
 
 systemMoves :: [HaskemonModel] -> [HaskemonModel] -> Value -> [HaskemonSession]
@@ -569,10 +279,6 @@ systemMoves team enemy sessionId = do
                             , currentHaskemon = findFirstAliveHaskemon updatedTeam3 0
                             }
                         ]
-
-
-
-        
 
 findFirstAliveHaskemon :: [HaskemonModel] -> Int -> Int
 findFirstAliveHaskemon team startIdx
