@@ -38,6 +38,8 @@ library
       GameSession.Model.GameSessionModel
       GameSession.Repository.GameSessionRepository
       GameSession.Service.GameSessionService
+      Haskemon.Model.HaskemonModel
+      Haskemon.Service.HaskemonService
       Lib
   other-modules:
       Paths_funpro

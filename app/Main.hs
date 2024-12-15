@@ -6,7 +6,7 @@ import Web.Scotty (get, put, post, scotty, json, jsonData, formParam, param, Sco
 import Control.Monad.IO.Class (liftIO)
 import Data.Text.Lazy (Text, toStrict)
 import Game.Service.GameService (getAllGames)
-import GameSession.Service.GameSessionService (createNewEasySudokuSession, findGameSession)
+import GameSession.Service.GameSessionService (createNewEasySudokuSession, findGameSession, playGame)
 import Auth.Service.AuthService (registerUser, login)
 import Auth.Security.AuthMiddleware (authMiddleware)
 import Haskemon.Service.HaskemonService (createHaskemonForUser, createGameSession, findHaskemonSession, playHaskemon)
@@ -45,7 +45,7 @@ funpro = do
     get "/games" getAllGames
     get "/gameSession/newGame/sudoku/easy" $ authMiddleware createNewEasySudokuSession
     get "/gameSession/:gameSessionId" findGameSession
-    -- put "/gameSession/:gameSessionId" playGame
+    put "/gameSession/:gameSessionId" playGame
     
     post "/register" $ do
         uname <- formParam "username" :: ActionM Text

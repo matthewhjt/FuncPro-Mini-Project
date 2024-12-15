@@ -2,18 +2,23 @@
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 module GameSession.Service.GameSessionService (
     createNewEasySudokuSession,
-    findGameSession
-    -- playGame
+    findGameSession,
+    playGame
 ) where
 
 import Control.Monad.IO.Class (MonadIO(liftIO))
-import Web.Scotty ( json, pathParam, ActionM )
-import GameSession.Repository.GameSessionRepository (createGameSession, findGameSessionById)
+import Web.Scotty ( json, pathParam, ActionM, jsonData )
+import GameSession.Repository.GameSessionRepository (createGameSession, findGameSessionById, updateGameSession)
 import Game.Service.GameValidator (Board)
 import Lib (ApiResponse(..), safeCreateObjectId)
-import GameSession.Model.GameSessionModel (GameSession(..))
+import GameSession.Model.GameSessionModel 
+    (GameSession(..)
+    , PlaySudokuRequest(..)
+    , getPlaySudokuRequestMove
+    )
 import qualified Data.Map as Map
 import Data.Aeson (toJSON)
+import Data.Maybe
 import Game.Service.GameGenerator (generateEasySudoku)
 
 createNewEasySudokuSession :: ActionM()
@@ -48,3 +53,36 @@ findGameSession = do
     case gameSession of
         Just gS -> json gS
         Nothing -> json notFoundResponse
+
+playGame :: ActionM ()
+playGame = do
+    gameSessionId <- pathParam "gameSessionId" :: ActionM String
+    let gameSessionObjectId = safeCreateObjectId gameSessionId
+    prevTurn <- liftIO $ findGameSessionById gameSessionObjectId
+
+    let notFoundResponse = ApiResponse
+                        { code = 404
+                        , success = False
+                        , message = "GameSession Not Found"
+                        , dataFields = Map.empty
+                        }
+
+    if isNothing prevTurn
+    then json notFoundResponse
+    else do
+        let (GameSession gameSessionId gameMoves isWin) = fromJust prevTurn
+        req <- jsonData :: ActionM PlaySudokuRequest
+        let newMove = getPlaySudokuRequestMove req
+        let updatedGameMoves = gameMoves ++ [newMove]
+        let newGameSession = GameSession gameSessionId updatedGameMoves isWin
+        saveGameSession <- liftIO $ updateGameSession gameSessionId newGameSession
+        let response = ApiResponse
+                { code = 200
+                , success = True
+                , message = "Move saved successfully."
+                , dataFields = Map.fromList
+                    [
+                        ("gameSession", toJSON saveGameSession)
+                    ]
+                }
+        json response
