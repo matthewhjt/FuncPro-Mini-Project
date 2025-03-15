@@ -2,10 +2,31 @@
 
 module Main (main) where
 
-import Web.Scotty (get, html, pathParam, scotty)
+import Web.Scotty ( get, put, post, scotty, jsonData, formParam, ScottyM, ActionM )
+import Data.Text.Lazy (Text, toStrict)
+import Game.Service.GameService (getAllGames)
+import GameSession.Service.GameSessionService (createNewEasySudokuSession, findGameSession, playGame)
+import Auth.Service.AuthService (registerUser, login)
+import Auth.Security.AuthMiddleware (authMiddleware)
+import Auth.Model.UserModel (User(..))
+
+funpro :: ScottyM()
+funpro = do
+    get "/games" getAllGames
+    get "/gameSession/newGame/sudoku/easy" createNewEasySudokuSession 
+    get "/gameSession/:gameSessionId" findGameSession
+    put "/gameSession/:gameSessionId" playGame
+    
+    post "/register" $ do
+        uname <- formParam "username" :: ActionM Text
+        pwd <- formParam "password" :: ActionM Text
+        registerUser (toStrict uname) (toStrict pwd)
+
+    post "/login" $ do
+        uname <- formParam "username" :: ActionM Text
+        pwd <- formParam "password" :: ActionM Text
+        login (toStrict uname) (toStrict pwd)
 
 main :: IO ()
-main = scotty 3000 $
-  get "/:word" $ do
-    beam <- pathParam "word"
-    html $ mconcat ["<h1>Scotty, ", beam, " me up!</h1>"]
+main = do
+    scotty 3000 funpro
